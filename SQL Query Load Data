@@ -1,0 +1,517 @@
+# Note:
+# Replace the dir on LOAD DATA INFILE to where yourdata is located
+
+# Daily Activity Data ==============================================================
+
+CREATE TABLE dailyactivity(
+    id VARCHAR(10), 
+    strdate VARCHAR(9), 
+    ttlsteps INT, 
+    ttldis DECIMAL(6,3), 
+    trckrdis DECIMAL(6,3), 
+    logactivdis DECIMAL(6,3), 
+    vactivdis DECIMAL(6,3), 
+    factivedis DECIMAL(6,3), 
+    lactivedis DECIMAL(6,3), 
+    sactivedis DECIMAL(6,3), 
+    vactivemin INT, 
+    factivemin INT, 
+    lactivemin INT, 
+    sactivemin INT, 
+    calories INT
+);
+
+LOAD DATA INFILE '.../dailyActivity_merged.csv'
+INTO TABLE dailyactivity
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE dailyactivity ADD COLUMN activitydate DATE;
+UPDATE dailyactivity SET activitydate = STR_TO_DATE(strdate, "%m/%e/%Y");
+ALTER TABLE dailyactivity DROP COLUMN strdate;
+ALTER TABLE dailyactivity MODIFY COLUMN activitydate DATE AFTER id;
+
+# Daily Calories ==============================================================
+
+CREATE TABLE dailycalorie(
+    id VARCHAR(10),
+    strdate VARCHAR(9),
+    calories INT
+);
+
+LOAD DATA INFILE '.../dailyCalories_merged.csv'
+INTO TABLE dailycalorie
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE dailycalorie ADD COLUMN activitydate DATE;
+UPDATE dailycalorie SET activitydate = STR_TO_DATE(strdate, "%m/%e/%Y");
+ALTER TABLE dailycalorie DROP COLUMN strdate;
+ALTER TABLE dailycalorie MODIFY COLUMN activitydate DATE AFTER id;
+
+# Daily Intensities ==============================================================
+
+CREATE TABLE dailyintense(
+    id VARCHAR(10),
+    strdate VARCHAR(9),
+    sedenminutes INT,
+    lightminutes INT,
+    factiveminutes INT,
+    vactiveminutes INT,
+    sedendis DECIMAL(6,3),
+    lightdis DECIMAL(6,3),
+    factivedis DECIMAL(6,3),
+    vactivedis DECIMAL(6,3)
+);
+
+LOAD DATA INFILE '.../dailyIntensities_merged.csv'
+INTO TABLE dailyintense
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE dailyintense ADD COLUMN activitydate DATE;
+UPDATE dailyintense SET activitydate = STR_TO_DATE(strdate, "%m/%e/%Y");
+ALTER TABLE dailyintense DROP COLUMN strdate;
+ALTER TABLE dailyintense MODIFY COLUMN activitydate DATE AFTER id;
+
+# Daily Steps ==============================================================
+
+CREATE TABLE dailysteps(
+    id VARCHAR(10), 
+    strdate VARCHAR(9), 
+    stepttl INT
+);
+
+LOAD DATA INFILE '.../dailySteps_merged.csv'
+INTO TABLE dailysteps
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE dailysteps ADD COLUMN activitydate DATE;
+UPDATE dailysteps SET activitydate = STR_TO_DATE(strdate, "%m/%e/%Y");
+ALTER TABLE dailysteps DROP COLUMN strdate;
+ALTER TABLE dailysteps MODIFY COLUMN activitydate DATE AFTER id;
+
+# Daily Sleep ==============================================================
+
+CREATE TABLE daysleep(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    ttlsleeprec INT,
+    ttlsleepmin INT,
+    ttltimebed INT
+);
+
+LOAD DATA INFILE '.../sleepDay_merged.csv'
+INTO TABLE daysleep
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE daysleep ADD COLUMN sleepdate DATE;
+UPDATE daysleep SET sleepdate = STR_TO_DATE((SELECT SUBSTRING_INDEX(strdate, " ", 1)), "%m/%e/%Y");
+ALTER TABLE daysleep DROP COLUMN strdate;
+ALTER TABLE daysleep MODIFY COLUMN sleepdate DATE AFTER id;
+
+# Heartrate Seconds ==============================================================
+
+CREATE TABLE heartsec(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    heartrate INT
+);
+
+LOAD DATA INFILE '.../heartrate_seconds_merged.csv'
+INTO TABLE heartsec
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+ALTER TABLE heartsec ADD COLUMN ampm VARCHAR(2);
+ALTER TABLE heartsec ADD COLUMN datelogged DATE;
+ALTER TABLE heartsec ADD COLUMN timelogged TIME;
+
+UPDATE heartsec SET datelogged = STR_TO_DATE(
+    (SELECT LEFT(strdate, 9))
+    , "%m/%e/%Y"
+);
+UPDATE heartsec SET ampm = RIGHT(strdate, 2);
+
+UPDATE heartsec SET strdate = SUBSTRING_INDEX(strdate, " ", -2);
+UPDATE heartsec SET strdate = SUBSTRING_INDEX(strdate, " ", 1);
+UPDATE heartsec SET timelogged = TIME_FORMAT(strdate, "%h:%i:%s");
+
+ALTER TABLE heartsec DROP COLUMN strdate;
+UPDATE heartsec SET timelogged = ADDTIME(timelogged, "12:00:00") WHERE ampm = "PM";
+ALTER TABLE heartsec DROP COLUMN ampm;
+ALTER TABLE heartsec MODIFY COLUMN heartrate INT AFTER timelogged;
+
+# Hourly Calorie ==============================================================
+
+CREATE TABLE hourcalorie(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    hourlycalories INT
+);
+
+LOAD DATA INFILE '.../heartrate_seconds_merged.csv'
+INTO TABLE hourcalorie
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE hourcalorie ADD COLUMN ampm VARCHAR(2);
+ALTER TABLE hourcalorie ADD COLUMN datelogged DATE;
+ALTER TABLE hourcalorie ADD COLUMN timelogged TIME;
+
+UPDATE hourcalorie SET datelogged = STR_TO_DATE(
+    (SELECT LEFT(strdate, 9))
+    , "%m/%e/%Y"
+);
+UPDATE hourcalorie SET ampm = RIGHT(strdate, 2);
+
+UPDATE hourcalorie SET strdate = SUBSTRING_INDEX(strdate, " ", -2);
+UPDATE hourcalorie SET strdate = SUBSTRING_INDEX(strdate, " ", 1);
+UPDATE hourcalorie SET timelogged = TIME_FORMAT(strdate, "%h:%i:%s");
+
+ALTER TABLE hourcalorie DROP COLUMN strdate;
+UPDATE hourcalorie SET timelogged = ADDTIME(timelogged, "12:00:00") WHERE ampm = "PM";
+ALTER TABLE hourcalorie DROP COLUMN ampm;
+ALTER TABLE hourcalorie MODIFY COLUMN hourlycalories INT AFTER timelogged;
+
+# Hourly Intensities ==============================================================
+
+CREATE TABLE hourintense(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    ttlintensity INT,
+    avgintensity DECIMAL(6,4)
+);
+
+LOAD DATA INFILE '.../hourlyIntensities_merged.csv'
+INTO TABLE hourintense
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE hourintense 
+ADD COLUMN datelogged DATE, 
+ADD COLUMN timelogged TIME, 
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE hourintense SET 
+ampm = RIGHT(strdate, 2), 
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y"), 
+timelogged = TIME_FORMAT(SUBSTRING_INDEX(
+    (
+        SELECT SUBSTRING_INDEX(strdate, " ", 2)
+    ), " ", -1)
+, "%h:%i:%s");
+
+UPDATE hourintense SET timelogged = ADDTIME(timelogged, "12:00:00") WHERE ampm = "PM";
+
+ALTER TABLE hourintense 
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE hourintense 
+CHANGE COLUMN ttlintensity ttlintensity INT AFTER ampm, 
+CHANGE COLUMN avgintensity avgintensity DECIMAL(6,4) AFTER ttlintensity;
+
+# Hourly Steps ==============================================================
+
+CREATE TABLE hoursteps(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    stepsttl INT
+);
+
+LOAD DATA INFILE '.../hourlySteps_merged.csv'
+INTO TABLE hoursteps
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE hoursteps
+ADD COLUMN datelogged DATE, 
+ADD COLUMN timelogged TIME, 
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE hoursteps SET
+ampm = (SELECT RIGHT(strdate, 2)),
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y"),
+timelogged = TIME_FORMAT(
+    (SELECT SUBSTRING_INDEX(
+        (SELECT SUBSTRING_INDEX(strdate ," ", 2)), " ", -1)
+    )
+, "%h:%i:%s");
+
+UPDATE hoursteps SET timelogged = ADDTIME(timelogged, "12:00:00") WHERE ampm = "PM";
+
+ALTER TABLE hoursteps
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE hoursteps MODIFY COLUMN stepsttl INT AFTER timelogged;
+
+# Minute Calorie ==============================================================
+
+CREATE TABLE mincalorien(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    calories DECIMAL(11, 9)
+);
+
+LOAD DATA INFILE '.../minuteCaloriesNarrow_merged.csv'
+INTO TABLE mincalorien
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+UPDATE mincalorien SET calories = ROUND(calories, 5);
+ALTER TABLE mincalorien CHANGE COLUMN calories calories DECIMAL(7, 5);
+
+ALTER TABLE mincalorien
+ADD COLUMN datelogged DATE,
+ADD COLUMN hourlogged INT,
+ADD COLUMN minlogged INT,
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE mincalorien SET
+ampm = (SELECT RIGHT(strdate, 2)),
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y");
+
+UPDATE mincalorien SET
+hourlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2)," ", -1), ":", 1);
+UPDATE mincalorien SET hourlogged = (hourlogged + 12) WHERE ampm = "PM";
+UPDATE mincalorien SET hourlogged = (hourlogged - 12) WHERE ampm = "AM" AND hourlogged = 12;
+
+UPDATE mincalorien SET
+minlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2), " ", -1), ":", 2), ":", -1);
+
+ALTER TABLE mincalorien
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE mincalorien MODIFY COLUMN calories DECIMAL(7, 5) AFTER minlogged;
+
+# Minute Intensities ==============================================================
+
+CREATE TABLE minintensen(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    intensity INT
+);
+
+LOAD DATA INFILE '.../minuteIntensitiesNarrow_merged.csv'
+INTO TABLE minintensen
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE minintensen
+ADD COLUMN datelogged DATE,
+ADD COLUMN hourlogged INT,
+ADD COLUMN minlogged INT,
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE minintensen SET
+ampm = (SELECT RIGHT(strdate, 2)),
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y");
+
+UPDATE minintensen SET
+hourlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2)," ", -1), ":", 1);
+UPDATE minintensen SET hourlogged = (hourlogged + 12) WHERE ampm = "PM";
+UPDATE minintensen SET hourlogged = (hourlogged - 12) WHERE ampm = "AM" AND hourlogged = 12;
+
+UPDATE minintensen SET
+minlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2), " ", -1), ":", 2), ":", -1);
+
+ALTER TABLE minintensen
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE minintensen MODIFY COLUMN intensity INT AFTER minlogged;
+
+# Minute METs ==============================================================
+
+CREATE TABLE minmetn(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    mets INT
+);
+
+LOAD DATA INFILE '.../minuteMETsNarrow_merged.csv'
+INTO TABLE minmetn
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE minmetn
+ADD COLUMN datelogged DATE,
+ADD COLUMN hourlogged INT,
+ADD COLUMN minlogged INT,
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE minmetn SET
+ampm = (SELECT RIGHT(strdate, 2)),
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y");
+
+UPDATE minmetn SET
+hourlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2)," ", -1), ":", 1);
+UPDATE minmetn SET hourlogged = (hourlogged + 12) WHERE ampm = "PM";
+UPDATE minmetn SET hourlogged = (hourlogged - 12) WHERE ampm = "AM" AND hourlogged = 12;
+
+UPDATE minmetn SET
+minlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2), " ", -1), ":", 2), ":", -1);
+
+ALTER TABLE minmetn
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE minmetn MODIFY COLUMN mets INT AFTER minlogged;
+
+# Minute Sleep ==============================================================
+
+CREATE TABLE minsleep(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    sleepvalue INT,
+    logid VARCHAR(11)
+);
+
+LOAD DATA INFILE '.../minuteSleep_merged.csv'
+INTO TABLE minsleep
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE minsleep
+ADD COLUMN datelogged DATE,
+ADD COLUMN hourlogged INT,
+ADD COLUMN minlogged INT,
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE minsleep SET
+ampm = (SELECT RIGHT(strdate, 2)),
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y");
+
+UPDATE minsleep SET
+hourlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2)," ", -1), ":", 1);
+UPDATE minsleep SET hourlogged = (hourlogged + 12) WHERE ampm = "PM";
+UPDATE minsleep SET hourlogged = (hourlogged - 12) WHERE ampm = "AM" AND hourlogged = 12;
+
+UPDATE minsleep SET
+minlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2), " ", -1), ":", 2), ":", -1);
+
+ALTER TABLE minsleep
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE minsleep MODIFY COLUMN sleepvalue INT AFTER minlogged;
+ALTER TABLE minsleep MODIFY COLUMN logid VARCHAR(11) AFTER sleepvalue;
+
+# Minute Step ==============================================================
+
+CREATE TABLE minstepn(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    steps INT
+);
+
+LOAD DATA INFILE '.../minuteStepsNarrow_merged.csv'
+INTO TABLE minstepn
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE minstepn
+ADD COLUMN datelogged DATE,
+ADD COLUMN hourlogged INT,
+ADD COLUMN minlogged INT,
+ADD COLUMN ampm VARCHAR(2);
+
+UPDATE minstepn SET
+ampm = (SELECT RIGHT(strdate, 2)),
+datelogged = STR_TO_DATE((SELECT LEFT(strdate, 9)), "%m/%e/%Y");
+
+UPDATE minstepn SET
+hourlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2)," ", -1), ":", 1);
+UPDATE minstepn SET hourlogged = (hourlogged + 12) WHERE ampm = "PM";
+UPDATE minstepn SET hourlogged = (hourlogged - 12) WHERE ampm = "AM" AND hourlogged = 12;
+
+UPDATE minstepn SET
+minlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2), " ", -1), ":", 2), ":", -1);
+
+ALTER TABLE minstepn
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE minstepn MODIFY COLUMN steps INT AFTER minlogged;
+
+# Weights ==============================================================
+
+CREATE TABLE weightmerge(
+    id VARCHAR(10),
+    strdate VARCHAR(30),
+    weightkg DECIMAL(16,13),
+    weightpound DECIMAL(16,13),
+    fatstr VARCHAR(2),
+    bmi DECIMAL(4,2),
+    ismanualstr VARCHAR(5),
+    logid VARCHAR(13)
+);
+
+LOAD DATA INFILE '.../weightLogInfo_merged.csv'
+INTO TABLE weightmerge
+FIELDS TERMINATED BY ","
+LINES TERMINATED BY "\n"
+IGNORE 1 ROWS;
+
+ALTER TABLE weightmerge
+ADD COLUMN ampm VARCHAR(2),
+ADD COLUMN datelogged DATE,
+ADD COLUMN hourlogged INT,
+ADD COLUMN minlogged INT,
+ADD COLUMN ismanual BOOL DEFAULT(FALSE),
+ADD COLUMN fat INT;
+
+ALTER TABLE weightmerge MODIFY COLUMN ismanual BOOL DEFAULT(FALSE) AFTER bmi;
+UPDATE weightmerge SET fatstr = "0" WHERE fatstr = "";
+UPDATE weightmerge SET fat = (SELECT CAST(fatstr AS SIGNED));
+ALTER TABLE weightmerge DROP COLUMN fatstr;
+ALTER TABLE weightmerge MODIFY COLUMN fat INT AFTER weightpound;
+
+UPDATE weightmerge SET 
+weightkg = ROUND(weightkg, 2),
+weightpound = ROUND(weightpound, 2);
+
+ALTER TABLE weightmerge CHANGE COLUMN weightkg weightkg DECIMAL(5,2);
+ALTER TABLE weightmerge CHANGE COLUMN weightpound weightpound DECIMAL(6,2);
+
+UPDATE weightmerge SET
+ampm = RIGHT(strdate, 2),
+datelogged = STR_TO_DATE((SELECT SUBSTRING_INDEX(strdate, " ", 1)), "%m/%e/%Y");
+
+UPDATE weightmerge SET
+hourlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2)," ", -1), ":", 1);
+UPDATE weightmerge SET hourlogged = (hourlogged + 12) WHERE ampm = "PM";
+UPDATE weightmerge SET hourlogged = (hourlogged - 12) WHERE ampm = "AM" AND hourlogged = 12;
+
+UPDATE weightmerge SET
+minlogged = SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(strdate, " ", 2), " ", -1), ":", 2), ":", -1);
+
+ALTER TABLE weightmerge
+DROP COLUMN strdate,
+DROP COLUMN ampm;
+
+ALTER TABLE weightmerge MODIFY COLUMN datelogged DATE AFTER id;
+ALTER TABLE weightmerge MODIFY COLUMN hourlogged INT AFTER datelogged;
+ALTER TABLE weightmerge MODIFY COLUMN minlogged INT AFTER hourlogged;
+
+UPDATE weightmerge SET ismanual = TRUE WHERE ismanualstr = "TRUE";
+ALTER TABLE weightmerge DROP COLUMN ismanualstr;
